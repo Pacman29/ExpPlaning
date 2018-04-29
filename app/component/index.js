@@ -1,8 +1,8 @@
 import React from "react";
 import ExponentialDistribution from "../services/exponentialDisribution";
 import Model from "../services/model";
-import math from 'mathjs'
-import {FormControl} from "react-bootstrap";
+import {Col, FormControl, Grid, Row} from "react-bootstrap";
+import Plot from 'react-plotly.js';
 
 export default class App extends React.Component{
   constructor(props){
@@ -19,7 +19,8 @@ export default class App extends React.Component{
         T_real: "",
         T1: "",
         T2: "",
-      }
+      },
+      plots: []
     };
     this.calculate = this.calculate.bind(this);
     this.getSolution = this.getSolution.bind(this);
@@ -75,7 +76,53 @@ export default class App extends React.Component{
     let t1 = b1[0] + b1[1]*Ed1.mean + b1[2] * Ed2.mean;
     let t2 = b2[0] + b2[1]*Ed1.mean + b2[2] * Ed2.mean + b2[3]*Ed1.mean* Ed2.mean;
 
-    this.setState({solution: {
+    let plotsData = [];
+    let realSurface = {
+      x: [],
+      y: [],
+      z: [],
+      type: 'mesh3d',
+      color: 'red'
+    };
+    let exp1Surface = {
+      x: [],
+      y: [],
+      z: [],
+      type: 'mesh3d',
+      color: 'blue'
+    };
+    let exp2Surface = {
+      x: [],
+      y: [],
+      z: [],
+      type: 'mesh3d',
+      color: 'green'
+    };
+    debugger;
+    if((lambda - 0.5) <= 0 || (muy - 0.5) <= 0){
+      alert('График не может быть построен');
+    } else {
+      for(let dx = lambda-0.5; dx <= lambda+0.5; dx+=0.1 ){
+        for(let dy = muy-0.5; dy<= muy+0.5; dy+=0.1){
+          let r1 = new ExponentialDistribution(dx);
+          let r2 = new ExponentialDistribution(dy);
+          realSurface.x.push(dx);
+          realSurface.y.push(dy);
+          realSurface.z.push(Model.experiment(N,()=>r1.random,()=>r2.random));
+          exp1Surface.x.push(dx);
+          exp1Surface.y.push(dy);
+          exp1Surface.z.push(b1[0] + b1[1]*r1.mean + b1[2] * r2.mean);
+          exp2Surface.x.push(dx);
+          exp2Surface.y.push(dy);
+          exp2Surface.z.push(b2[0] + b2[1]*r1.mean + b2[2] * r2.mean + b2[3]*r1.mean*r2.mean);
+        }
+      }
+      debugger;
+      plotsData.push(realSurface,exp1Surface,exp2Surface);
+    }
+
+    this.setState({
+      solution: {
         b0: b2[0],
         b1: b2[1],
         b2: b2[2],
@@ -83,7 +130,8 @@ export default class App extends React.Component{
         T_real: t_real,
         T1: t1,
         T2: t2
-      }
+      },
+      plots: plotsData
     });
   }
 
@@ -102,12 +150,14 @@ export default class App extends React.Component{
 
   render(){
     return (
-      <div>
-        <h3>Экспоненциальное распределение</h3>
-        <div>
-          <div>
+      <Grid>
+        <Row className="show-grid">
+          <Col md={2} xs={2}>
+            <h3>Экспоненциальное распределение</h3>
+            <div>
+              <div>
             <span>
-              Очередь:
+              <div>Очередь:</div>
               <FormControl
                 className="form-control"
                 type="text"
@@ -116,10 +166,10 @@ export default class App extends React.Component{
                 onChange={(e) => this.setState({queueDistribution : e.target.value })}
               />
             </span>
-          </div>
-          <div>
+              </div>
+              <div>
             <span>
-              ОА:
+              <div>ОА:</div>
               <FormControl
                 className="form-control"
                 type="text"
@@ -128,10 +178,10 @@ export default class App extends React.Component{
                 onChange={(e) => this.setState({autoDistribution : e.target.value })}
               />
             </span>
-          </div>
-          <div>
+              </div>
+              <div>
             <span>
-              Колличество заявок:
+              <div>Колличество заявок:</div>
               <FormControl
                 className="form-control"
                 type="text"
@@ -140,19 +190,24 @@ export default class App extends React.Component{
                 onChange={(e) => this.setState({requests : e.target.value })}
               />
             </span>
-          </div>
-          <button onClick={this.calculate}>Рассчитать</button>
-        </div>
-        <div>
-          <h3>Результат: </h3>
-          <div>
-            {this.getSolution()}
-          </div>
-          <div id='plot'>
-
-          </div>
-        </div>
-      </div>
+              </div>
+              <button onClick={this.calculate}>Рассчитать</button>
+            </div>
+            <div>
+              <h3>Результат: </h3>
+              <div>
+                {this.getSolution()}
+              </div>
+            </div>
+          </Col>
+          <Col md={10} xs={10}>
+            <Plot
+              data={this.state.plots}
+              layout={{width: 1000, height:600, title: 'Результирующие поверхности'}}
+            />
+          </Col>
+        </Row>
+      </Grid>
     )
   }
 }

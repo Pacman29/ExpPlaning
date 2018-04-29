@@ -16,10 +16,12 @@
   "license": "ISC",
   "dependencies": {
     "mathjs": "^4.1.2",
+    "plotly.js": "^1.36.1",
     "prob.js": "^1.0.6",
     "react": "^15.1.0",
     "react-bootstrap": "^0.32.1",
     "react-dom": "^15.1.0",
+    "react-plotly.js": "^2.1.0",
     "react-redux": "^4.4.5",
     "redux": "^3.5.2"
   },
